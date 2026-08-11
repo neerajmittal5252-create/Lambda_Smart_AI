@@ -75,7 +75,8 @@ def run_repo_crew(repo_url: str, repo_name: str):
         agents=[ingestor, summarizer],
         tasks=[ingest_task, summary_task],
         process=Process.sequential,
-        verbose=True
+        verbose=True,
+        memory=False
     )
 
     return crew.kickoff(inputs={"repo_url": repo_url, "repo_name": repo_name})
