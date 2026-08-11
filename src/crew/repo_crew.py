@@ -1,4 +1,4 @@
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Task, Crew, LLM, Process
 from crewai.tools import tool
 from langchain_openai import ChatOpenAI
 from src.config import Config
