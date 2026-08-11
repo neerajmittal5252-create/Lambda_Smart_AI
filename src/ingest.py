@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from git import Repo
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.vector_store import embed_and_store
 from src.config import Config
 
