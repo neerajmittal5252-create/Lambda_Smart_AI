@@ -6,7 +6,7 @@ from src.ingest import clone_repo, chunk_and_ingest
 from src.vector_store import search_similar
 
 llm = ChatOpenAI(
-    model="nvidia/nemotron-3-nano-30b-a3b:free",
+    model="openrouter/openai/gpt-4o-mini",
     base_url="https://openrouter.ai/api/v1",
     api_key=Config.OPENROUTER_API_KEY
 )
