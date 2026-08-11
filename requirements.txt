@@ -1,0 +1,10 @@
+streamlit
+langgraph
+langchain-core
+langchain-openai
+langchain-community
+supabase
+python-dotenv
+crewai
+GitPython
+pytest

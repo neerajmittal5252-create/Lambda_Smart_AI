@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  sigma-chat:
+    build: .
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./cloned_repos:/app/cloned_repos
+    restart: unless-stopped
