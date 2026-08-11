@@ -6,7 +6,9 @@ from src.config import Config
 supabase = create_client(Config.SUPABASE_URL, Config.SUPABASE_KEY)
 embeddings = OpenAIEmbeddings(
     model=Config.EMBEDDING_MODEL,
-    api_key=Config.OPENAI_API_KEY
+    api_key=Config.OPENROUTER_API_KEY,
+    base_url=Config.OPENROUTER_BASE_URL,
+    check_embedding_ctx_length=False 
 )
 
 def embed_and_store(text: str, metadata: dict):
