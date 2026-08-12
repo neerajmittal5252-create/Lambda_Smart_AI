@@ -121,4 +121,6 @@ def run_repo_crew(
         memory=False
     )
 
-    return crew.kickoff()
+    result = crew.kickoff()
+    # CrewOutput object — get raw string
+    return str(result.raw if hasattr(result, "raw") else result)
