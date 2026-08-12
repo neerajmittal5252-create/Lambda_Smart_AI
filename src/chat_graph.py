@@ -217,8 +217,8 @@ def tool_node(state: ChatState) -> dict:
     question = last_user_msg.content if last_user_msg else None
 
     try:
-        # FIXED: was passing repo_url=... instead of repo_name=...
         result = run_repo_crew(
+            repo_url=state.get("repo_url") or "",
             repo_name=state.get("repo_name") or "unknown",
             question=question,
         )
