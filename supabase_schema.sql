@@ -11,13 +11,13 @@ create table if not exists chat_messages (
 create table if not exists repo_embeddings (
     id uuid default gen_random_uuid() primary key,
     content text not null,
-    embedding vector(1536),
+    embedding vector(2048),
     metadata jsonb default '{}',
     created_at timestamp with time zone default now()
 );
 
 create or replace function match_repo_embeddings(
-    query_embedding vector(1536),
+    query_embedding vector(2048),
     match_threshold float,
     match_count int
 )
@@ -27,7 +27,8 @@ returns table(
     metadata jsonb,
     similarity float
 )
-language sql stable
+language sql
+stable
 as $$
     select
         id,
