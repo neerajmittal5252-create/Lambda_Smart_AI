@@ -62,12 +62,21 @@ if st.sidebar.button("New Chat"):
 
 st.sidebar.header("My Conversations")
 
-for tid in get_all_threads():
-    label = tid[:8] + "..."
+try:
+    all_threads = get_all_threads()
+except Exception as e:
+    st.sidebar.error(f"Could not load threads: {e}")
+    all_threads = []
 
-    if st.sidebar.button(label, key=tid):
+for idx, tid in enumerate(all_threads):
+    label = tid[:8] + "..."
+    if st.sidebar.button(label, key=f"thread_{idx}_{tid}"):
         st.session_state["thread_id"] = tid
-        st.session_state["message_history"] = load_thread_messages(tid)
+        try:
+            st.session_state["message_history"] = load_thread_messages(tid)
+        except Exception as e:
+            st.sidebar.error(f"Could not load messages: {e}")
+            st.session_state["message_history"] = []
 
 
 st.sidebar.divider()
@@ -89,15 +98,8 @@ if st.sidebar.button("Ingest Repo"):
     if repo_url_input and repo_name_input:
         with st.spinner("Cloning & embedding..."):
             try:
-                path = clone_repo(
-                    repo_url_input,
-                    repo_name_input
-                )
-
-                count = chunk_and_ingest(
-                    path,
-                    repo_name_input
-                )
+                path = clone_repo(repo_url_input, repo_name_input)
+                count = chunk_and_ingest(path, repo_name_input)
 
                 st.session_state["repo_url"] = repo_url_input
                 st.session_state["repo_name"] = repo_name_input
@@ -131,34 +133,30 @@ user_message = st.chat_input("Type Here:")
 
 if user_message:
     st.session_state["message_history"].append(
-        {
-            "role": "user",
-            "content": user_message
-        }
+        {"role": "user", "content": user_message}
     )
 
     with st.chat_message("user"):
         st.markdown(user_message)
 
-    result = chatbot.invoke(
-        {
-            "messages": [
-                HumanMessage(content=user_message)
-            ],
-            "thread_id": st.session_state["thread_id"],
-            "repo_url": st.session_state["repo_url"],
-            "repo_name": st.session_state["repo_name"],
-        }
-    )
+    try:
+        result = chatbot.invoke(
+            {
+                "messages": [HumanMessage(content=user_message)],
+                "thread_id": st.session_state["thread_id"],
+                "repo_url": st.session_state["repo_url"],
+                "repo_name": st.session_state["repo_name"],
+            }
+        )
 
-    response = result["final_response"]
+        response = result["final_response"]
+
+    except Exception as e:
+        response = f"⚠️ Error: {e}"
 
     with st.chat_message("assistant"):
         st.markdown(response)
 
     st.session_state["message_history"].append(
-        {
-            "role": "assistant",
-            "content": response
-        }
+        {"role": "assistant", "content": response}
     )
