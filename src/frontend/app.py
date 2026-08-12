@@ -12,7 +12,7 @@ import uuid
 
 from langchain_core.messages import HumanMessage
 
-from src.chat_graph_fixed import chatbot
+from src.chat_graph import chatbot
 from src.persistence import load_thread_messages, get_all_threads
 from src.ingest import clone_repo, chunk_and_ingest
 
