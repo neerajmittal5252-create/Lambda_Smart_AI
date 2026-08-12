@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from src.chat_graph import chatbot, llm_node, tool_node, router_node, memory_node
-from langchain_core.messages import HumanMessage, AIMessage
+from src.chat_graph import chatbot, llm_node, tool_node, router_node
+from langchain_core.messages import HumanMessage
 
 
 def test_graph_compiles():
@@ -63,4 +63,8 @@ def test_tool_node_calls_crew(mock_crew):
     }
     result = tool_node(state)
     assert "messages" in result
-    mock_crew.assert_called_once_with(repo_name="repo", question="Explain this repo")
+    mock_crew.assert_called_once_with(
+        repo_url="https://github.com/user/repo",
+        repo_name="repo",
+        question="Explain this repo"
+    )
