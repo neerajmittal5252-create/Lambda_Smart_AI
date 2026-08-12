@@ -9,3 +9,4 @@ crewai
 GitPython
 pytest
 ddgs
+openai
