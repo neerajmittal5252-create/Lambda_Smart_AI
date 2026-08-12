@@ -2,7 +2,7 @@ import os
 import re
 from typing import TypedDict, Annotated, Literal, Optional
 
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langchain_community.tools import DuckDuckGoSearchRun
@@ -73,9 +73,6 @@ def memory_node(state: ChatState) -> dict:
     thread_id = state["thread_id"]
     history = load_thread_messages(thread_id)
 
-    if len(state["messages"]) > 1:
-        return {}
-
     restored: list[BaseMessage] = []
 
     for row in history:
@@ -86,11 +83,8 @@ def memory_node(state: ChatState) -> dict:
 
     latest = state["messages"][-1]
 
-    save_message(
-        thread_id,
-        "user",
-        latest.content
-    )
+    # Save the latest user message to persistent memory
+    save_message(thread_id, "user", latest.content)
 
     return {
         "messages": restored + [latest]
@@ -128,21 +122,14 @@ def router_node(state: ChatState) -> dict:
 
     match = GITHUB_URL_RE.search(last_user_msg.content)
 
-    if match and not (
-        state.get("repo_url")
-        and state.get("repo_name")
-    ):
+    if match and not (state.get("repo_url") and state.get("repo_name")):
         owner, name = match.group(1), match.group(2)
-
         updates["repo_url"] = f"https://github.com/{owner}/{name}"
         updates["repo_name"] = name
 
     has_repo_context = bool(
         updates.get("repo_url")
-        or (
-            state.get("repo_url")
-            and state.get("repo_name")
-        )
+        or (state.get("repo_url") and state.get("repo_name"))
     )
 
     if not has_repo_context:
@@ -158,19 +145,10 @@ def router_node(state: ChatState) -> dict:
         )
 
         label = result.content.strip().lower()
+        updates["intent"] = "repo" if "repo" in label else "general"
 
-        updates["intent"] = (
-            "repo"
-            if "repo" in label
-            else "general"
-        )
-
-    except Exception as e:
-        updates["intent"] = (
-            "repo"
-            if match
-            else "general"
-        )
+    except Exception:
+        updates["intent"] = "repo" if match else "general"
 
     return updates
 
@@ -185,39 +163,33 @@ def route_after_classification(state: ChatState) -> str:
 
 def llm_node(state: ChatState) -> dict:
     try:
-        response = model_with_tools.invoke(
-            state["messages"]
-        )
+        response = model_with_tools.invoke(state["messages"])
 
         if getattr(response, "tool_calls", None):
-            tool_messages = []
+            tool_messages: list[BaseMessage] = []
 
             for call in response.tool_calls:
-                fn = {
-                    t.name: t
-                    for t in llm_tools
-                }[call["name"]]
+                tool_map = {t.name: t for t in llm_tools}
+                if call["name"] not in tool_map:
+                    continue
 
+                fn = tool_map[call["name"]]
                 result = fn.invoke(call["args"])
 
-                tool_messages.append({
-                    "role": "tool",
-                    "content": str(result),
-                    "tool_call_id": call["id"],
-                })
+                tool_messages.append(
+                    ToolMessage(
+                        content=str(result),
+                        tool_call_id=call["id"],
+                        name=call["name"],
+                    )
+                )
 
             follow_up = model_with_tools.invoke(
-                state["messages"]
-                + [response]
-                + tool_messages
+                state["messages"] + [response] + tool_messages
             )
 
             return {
-                "messages": [
-                    response,
-                    *tool_messages,
-                    follow_up,
-                ]
+                "messages": [response, *tool_messages, follow_up]
             }
 
         return {
@@ -227,9 +199,7 @@ def llm_node(state: ChatState) -> dict:
     except Exception as e:
         return {
             "messages": [
-                AIMessage(
-                    content=_friendly_error(e)
-                )
+                AIMessage(content=_friendly_error(e))
             ]
         }
 
@@ -244,30 +214,23 @@ def tool_node(state: ChatState) -> dict:
         None,
     )
 
-    question = (
-        last_user_msg.content
-        if last_user_msg
-        else None
-    )
+    question = last_user_msg.content if last_user_msg else None
 
     try:
+        # FIXED: was passing repo_url=... instead of repo_name=...
         result = run_repo_crew(
-            repo_url=state["repo_url"],
+            repo_name=state.get("repo_name") or "unknown",
             question=question,
         )
 
         return {
-            "messages": [
-                AIMessage(content=str(result))
-            ]
+            "messages": [AIMessage(content=str(result))]
         }
 
     except Exception as e:
         return {
             "messages": [
-                AIMessage(
-                    content=_friendly_error(e)
-                )
+                AIMessage(content=_friendly_error(e))
             ]
         }
 
@@ -286,9 +249,7 @@ def _friendly_error(e: Exception) -> str:
             "account to raise the limit, then try again."
         )
 
-    return (
-        f"⚠️ Something went wrong while generating a response: {msg}"
-    )
+    return f"⚠️ Something went wrong while generating a response: {msg}"
 
 
 def response_node(state: ChatState) -> dict:
