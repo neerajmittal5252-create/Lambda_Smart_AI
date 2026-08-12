@@ -3,9 +3,11 @@ langgraph
 langchain-core
 langchain-openai
 langchain-community
+langchain-text-splitters
 supabase
 python-dotenv
 crewai
+crewai-tools
 GitPython
 pytest
 ddgs
