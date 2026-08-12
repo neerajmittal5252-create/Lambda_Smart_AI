@@ -253,7 +253,6 @@ def tool_node(state: ChatState) -> dict:
     try:
         result = run_repo_crew(
             repo_url=state["repo_url"],
-            repo_name=state["repo_name"],
             question=question,
         )
 
