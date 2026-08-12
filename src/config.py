@@ -25,7 +25,7 @@ class Config:
     OPENROUTER_API_KEY = get_config("OPENROUTER_API_KEY")
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
     EMBEDDING_MODEL = "nvidia/nemotron-3-embed-1b:free"
-    VECTOR_DIM = 1024
+    VECTOR_DIM = 2048 
     VECTOR_TABLE = "repo_embeddings"
     LANGCHAIN_TRACING_V2 = get_config(
         "LANGCHAIN_TRACING_V2",
